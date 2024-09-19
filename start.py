@@ -20,6 +20,7 @@ MIDDLE = pg.Vector2(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)
 SCREEN = pg.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 BACKGROUND = pg.Surface(SCREEN.get_size()).convert()
 CLOCK = pg.time.Clock() # keep to limit framerate
+fps=30
 
 # Colors
 WHITE = (255, 255, 255)
@@ -60,6 +61,7 @@ def start_game():
     while running:
         # poll for events
         # pg.QUIT event means the user clicked X to close the window
+        pg.event.set_allowed([pg.QUIT, pg.MOUSEBUTTONDOWN]) #added event set for performance
         events = pg.event.get()
         for event in events:
             if event.type == pg.QUIT:
@@ -90,8 +92,9 @@ def start_game():
         
         # flip() the display to put the work we did on screen
         pg.display.flip()
+        #pg.display.update()
 
-        tick = CLOCK.tick(60) # limits FPS to 60
+        tick = CLOCK.tick(30) # limits FPS to 60
 
     return True
 
@@ -142,6 +145,7 @@ def choose_gamemode():
         
         # flip() the display to put the work we did on screen
         pg.display.flip()
+        #pg.display.update()
 
         tick = CLOCK.tick(60) # limits FPS to 60
     
@@ -243,6 +247,7 @@ def player_place_ships(screen, board, clock):
                 screen.blit(text, (10, 300))
             
             pg.display.flip()
+            #pg.display.update()
 
 def transition_between_turns(pnum):
     """
@@ -252,6 +257,7 @@ def transition_between_turns(pnum):
     """
     hold = True
     while hold:
+        pg.event.set_allowed([pg.QUIT, pg.KEYDOWN]) #added event set to improve performance
         for event in pg.event.get():
             if event.type == pg.QUIT:
                 pg.quit()
@@ -272,6 +278,7 @@ def transition_between_turns(pnum):
         pw.update(events)  # Call once every loop to allow widgets to render and listen
 
         pg.display.flip()
+        #pg.display.update()
 
 def check_victory(board):
     for row in board.gameBoard:
@@ -291,6 +298,7 @@ def player_turn(board, pnum):
     attacking = True
     hit = False
     while attacking:
+        pg.event.set_allowed([pg.QUIT, pg.MOUSEBUTTONDOWN]) #added event set for performance
         events = pg.event.get()
         for event in events:
             if event.type == pg.QUIT:
@@ -316,7 +324,7 @@ def player_turn(board, pnum):
                         if check_victory(board):
                             globals().update(game_over=True)
                             globals().update(winner=pnum)
-                            print(f"Player {pnum} wins!")
+                            print("Player {pnum} wins!")
                             return True
                         else:
                             attacking = False  # End turn after a successful hit
@@ -325,6 +333,7 @@ def player_turn(board, pnum):
 
         draw_board(board, X_OFFSET, MARGIN)
         pg.display.flip()
+        #pg.display.update()
         CLOCK.tick(60)
     return hit
 
@@ -337,6 +346,7 @@ def display_attack_result(attacking_player, hit):
     text_rect = text.get_rect(center=(MIDDLE.x, MIDDLE.y))
     SCREEN.blit(text, text_rect)
     pg.display.flip()
+    #pg.display.update()
     time.sleep(1.5)  # Display the result for 1.5 seconds
 
 def run():
@@ -417,6 +427,7 @@ def run():
     text_rect = text.get_rect(center=(MIDDLE.x, MIDDLE.y))
     SCREEN.blit(text, text_rect)
     pg.display.flip()
+    #pg.display.update()
     time.sleep(1.5)  # Display the result for 1.5 seconds
 
     pg.quit()
