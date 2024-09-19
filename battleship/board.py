@@ -13,7 +13,7 @@ import os
 # x for hit
 # Ship class for ship
 
-class Ship:
+class Ship:  
     def __init__(self, size, x=0, y=0) -> None:
         #self.x = 1
         #self.y = size # number 1-5 s.t. the ship is 1x(size)
@@ -49,6 +49,7 @@ class Ship:
 
     def draw(self, surface):
         surface.blit(self.image, self.rect.topleft)  #draw ship based on rect's position
+    
 
     def collidepoint(self, pos):
         return self.rect.collidepoint(pos)  #use pygame's rect's collidepoint to determine interaction with mouse
@@ -94,7 +95,10 @@ class Board:
                 if self.gameBoard[y + i][x] != 0:
                     return False
             for i in range(ship.size):
-                self.gameBoard[y + i][x] = ship
+                #self.gameBoard[y + i][x] = ship
+                #commented out above line, added line below so vertically placed ships are marked on the board
+                #9/19/24 JA
+                self.gameBoard[y + i][x] = 1
                 ship.positions.append((x, y + i))
         self.ships.append(ship)
         return True
