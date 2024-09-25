@@ -32,6 +32,7 @@ GRAY = (128, 128, 128)
 GREEN = (0, 255, 0)
 
 num_ships = None
+lvl_of_play = None
 game_over = False
 winner = 0
 
@@ -140,6 +141,64 @@ def choose_gamemode():
             running = False
             shipTxtbox.hide()
             shipTxtbox.disable()
+
+        SCREEN.blit(BACKGROUND, (0, 0))
+        pw.update(events)  # Call once every loop to allow widgets to render and listen
+        
+        # flip() the display to put the work we did on screen
+        pg.display.flip()
+        #pg.display.update()
+
+        tick = CLOCK.tick(60) # limits FPS to 60
+    
+    return True
+
+MARGIN = 50
+X_OFFSET = 360
+CELL_SIZE = 60
+GRID_SIZE = 10
+
+def choose_level_of_play():
+    running = True
+    def txtCb_2(txt):
+        text = ''.join(txt)
+        match = re.match("[1-4]", text)
+        if match:
+            print(f"difficulty: {match[0]}")
+            globals().update(lvl_of_play=int(match[0]))
+
+    levelofPlay = TextBox(BACKGROUND, MIDDLE.x - 30, MIDDLE.y + 200, 60, 80, fontSize=50, onSubmit=txtCb_2)
+    levelofPlay.onSubmitParams = [levelofPlay.text]
+
+    while running:
+        # poll for events
+        # pg.QUIT event means the user clicked X to close the window
+        events = pg.event.get()
+        for event in events:
+            if event.type == pg.QUIT:
+                running = False
+                return False
+        
+        BACKGROUND.fill("grey")
+        SCREEN.fill("grey")
+
+        if not lvl_of_play:
+            img = pg.image.load(os.path.join("data/battleship_fontbolt.png"))
+            img.convert()
+            img_size = img.get_size()
+            BACKGROUND.blit(img, (MIDDLE.x - img_size[0]/2, 100))
+
+            my_font = pg.font.Font(pg.font.get_default_font(), 36)
+            text_surface = my_font.render('Choose level of play [1-4] (2-4 for AI)', True, (0, 0, 0))
+            BACKGROUND.blit(text_surface, (MIDDLE.x - text_surface.get_width()/2, MIDDLE.y + 150))
+
+            levelofPlay.draw()
+            levelofPlay.show()
+            levelofPlay.enable()
+        else:
+            running = False
+            levelofPlay.hide()
+            levelofPlay.disable()
 
         SCREEN.blit(BACKGROUND, (0, 0))
         pw.update(events)  # Call once every loop to allow widgets to render and listen
@@ -457,6 +516,66 @@ def auto_attack_lvl2(board, pnum):
 
     return hit
 
+def auto_attack_lvl3(board, pnum):
+    '''
+    Moves to attack phase and confirms hits
+    Check victory condition
+    on miss switch to transition screen
+    switch to player 1 turn
+    '''
+    attacking = True
+    hit = False
+    needs_break = False
+    found = False
+    new_x = -1
+    new_y = -1
+    while attacking:
+
+        for y in range (0, 10):
+            for x in range (0, 10):
+                cell_value = board.gameBoard[y][x]
+                if cell_value == -2:  # There is a ship placed at this location
+                    new_x, new_y, found = return_adj(board, x, y)
+                    if found:
+                        print("attack adjacent cell success", new_x, new_y)
+                        needs_break = True
+                        cell_value = board.gameBoard[new_y][new_x]
+                        if cell_value == 0:
+                            print("miss")
+                            board.gameBoard[new_y][new_x] = -1
+                            attacking = False
+                        elif cell_value == 1:
+                            print("hit")
+                            board.gameBoard[new_y][new_x] = -2
+                            hit = True
+                            attacking = False
+                            if check_victory(board):
+                                globals().update(game_over=True)
+                                globals().update(winner=pnum)
+                                print(f"Player {pnum} wins!")
+                                return True
+                        else:
+                            attacking = True
+                    else:
+                        print("no targets found")
+                if needs_break:
+                    break
+            if needs_break:
+                break
+        if not found: 
+            hit = auto_attack_lvl2(board, pnum)  
+            attacking = False  
+            
+    
+        draw_board(board, X_OFFSET, MARGIN)
+        pg.display.flip()
+        #pg.display.update()
+        CLOCK.tick(30)
+
+    time.sleep(1.5)
+
+    return hit
+
 def auto_attack_lvl4(board, pnum):
     '''
     subroutine to automatically guess player 1 ships
@@ -505,6 +624,35 @@ def auto_attack_lvl4(board, pnum):
 
     return hit
 
+def return_adj(board, x, y):
+    #looks for adjacent cells, locations that haven't been attacked
+    #if a cell contains 0 or 1, can be attacked. Returns coordinates of the cell 
+    can_attack = None
+    new_x = x
+    new_y = y
+
+
+    if y < 9 and board.gameBoard[y+1][x] > -1:      #bounds checking 
+        new_y = y+1
+        can_attack = True
+        return new_x, new_y, can_attack
+    elif x < 9 and board.gameBoard[y][x+1] > -1:
+        new_x = x+1
+        can_attack = True
+        return new_x, new_y, can_attack
+    elif y > 0 and board.gameBoard[y-1][x] > -1:
+        new_y = y-1
+        can_attack = True
+        return new_x, new_y, can_attack
+    elif x > 0 and board.gameBoard[y][x-1] > -1:
+        new_x = x-1
+        can_attack = True
+        return new_x, new_y, can_attack
+    else:
+        can_attack = False
+        return new_x, new_y, can_attack
+    
+
 def display_attack_result(attacking_player, hit):
     font = pg.font.Font(None, 60)
     if hit:
@@ -538,11 +686,18 @@ def run():
 
     if not choose_gamemode():
         return -1
+    
+    if not choose_level_of_play():
+        return -1
+
 
     player_place_ships(SCREEN, player1_board, CLOCK)
     updated_transition_between_turns(2)
     #player_place_ships(SCREEN, player2_board, CLOCK)
-    auto_place_ships(SCREEN, player2_board, CLOCK)
+    if lvl_of_play > 1:
+        auto_place_ships(SCREEN, player2_board, CLOCK)
+    else:
+        player_place_ships(SCREEN, player1_board, CLOCK)
 
     global game_over
     while not game_over:
@@ -575,7 +730,15 @@ def run():
         SCREEN.fill("grey")
         SCREEN.blit(BACKGROUND, (0, 0))
         #hit = player_turn(player1_board, 2)
-        hit = auto_attack_lvl4(player1_board, 2)
+        if lvl_of_play == 1:
+            hit = player_turn(player1_board, 2)
+        elif lvl_of_play ==2:
+            hit = auto_attack_lvl2(player1_board, 2)
+        elif lvl_of_play == 3:
+            hit = auto_attack_lvl3(player1_board, 2)
+        else:
+            hit = auto_attack_lvl4(player1_board, 2)
+
         BACKGROUND.fill("grey") # These calls here need to be moved since they are interfering with the draw_board
         SCREEN.fill("grey")
         SCREEN.blit(BACKGROUND, (0, 0))
