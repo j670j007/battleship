@@ -14,8 +14,8 @@ from battleship.board import Ship
 
 DEBUG = True
 
-SCREEN_WIDTH = 1280
-SCREEN_HEIGHT = 720
+SCREEN_WIDTH = 1600
+SCREEN_HEIGHT = 900
 MIDDLE = pg.Vector2(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)
 
 SCREEN = pg.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
@@ -36,7 +36,7 @@ lvl_of_play = None
 game_over = False
 winner = 0
 
-def draw_board(board, x_offset, y_offset):
+def draw_board(board, x_offset, y_offset, if_ships_visible):
     # TODO
     my_font = pg.font.Font(pg.font.get_default_font(), 36)
     GRID_SIZE = 10
@@ -45,6 +45,8 @@ def draw_board(board, x_offset, y_offset):
         for x in range(GRID_SIZE):
             rect = pg.Rect(x_offset + x * CELL_SIZE, y_offset + y * CELL_SIZE, CELL_SIZE, CELL_SIZE)
             pg.draw.rect(BACKGROUND, (0, 0, 0), rect, 1)
+            if (isinstance(board.gameBoard[y][x], Ship) or board.gameBoard[y][x] > 0) and if_ships_visible == 1:
+                pg.draw.circle(BACKGROUND, GREEN, rect.center, CELL_SIZE //4)                
             if board.gameBoard[y][x] == -1: #-1 on the grid indicates a miss
                 pg.draw.circle(BACKGROUND, (0,0,255), rect.center, CELL_SIZE // 4)
             elif board.gameBoard[y][x] == -2: #-2 on the grid indicates a hit
@@ -154,7 +156,7 @@ def choose_gamemode():
     return True
 
 MARGIN = 50
-X_OFFSET = 360
+X_OFFSET = 180
 CELL_SIZE = 60
 GRID_SIZE = 10
 
@@ -211,10 +213,7 @@ def choose_level_of_play():
     
     return True
 
-MARGIN = 50
-X_OFFSET = 360
-CELL_SIZE = 60
-GRID_SIZE = 10
+
 
 def player_place_ships(screen, board, clock):
     """
@@ -263,7 +262,7 @@ def player_place_ships(screen, board, clock):
             screen.fill("grey")
             BACKGROUND.fill("grey")
             screen.blit(BACKGROUND, (0, 0))
-            draw_board(board, X_OFFSET, MARGIN)
+            draw_board(board, X_OFFSET, MARGIN, 1)
 
             # Draw ship preview
             mouse_x, mouse_y = pg.mouse.get_pos()
@@ -350,7 +349,7 @@ def auto_place_ships(screen, board, clock):
     screen.fill("grey")
     BACKGROUND.fill("grey")
     screen.blit(BACKGROUND, (0, 0))
-    draw_board(board, X_OFFSET, MARGIN)
+    draw_board(board, X_OFFSET, MARGIN, 0)
 
 
 #def transition_between_turns(pnum):
@@ -468,7 +467,7 @@ def player_turn(board, pnum):
                     else:
                         print("Already attacked this cell")
 
-        draw_board(board, X_OFFSET, MARGIN)
+        draw_board(board, X_OFFSET, MARGIN, 0)
         pg.display.flip()
         #pg.display.update()
         CLOCK.tick(60)
@@ -509,7 +508,7 @@ def auto_attack_lvl2(board, pnum):
             else:
                 print("Already attacked this cell")
 
-        draw_board(board, X_OFFSET, MARGIN)
+        draw_board(board, X_OFFSET, MARGIN,0)
         pg.display.flip()
         #pg.display.update()
         CLOCK.tick(60)
@@ -567,7 +566,7 @@ def auto_attack_lvl3(board, pnum):
             attacking = False  
             
     
-        draw_board(board, X_OFFSET, MARGIN)
+        draw_board(board, X_OFFSET, MARGIN,0)
         pg.display.flip()
         #pg.display.update()
         CLOCK.tick(30)
@@ -617,7 +616,7 @@ def auto_attack_lvl4(board, pnum):
         #else:
             #print("Already attacked this cell")
 
-    draw_board(board, X_OFFSET, MARGIN)
+    draw_board(board, X_OFFSET, MARGIN,0)
     pg.display.flip()
     #pg.display.update()
     CLOCK.tick(60)
@@ -697,7 +696,7 @@ def run():
     if lvl_of_play > 1:
         auto_place_ships(SCREEN, player2_board, CLOCK)
     else:
-        player_place_ships(SCREEN, player1_board, CLOCK)
+        player_place_ships(SCREEN, player2_board, CLOCK)
 
     global game_over
     while not game_over:
@@ -708,7 +707,17 @@ def run():
         BACKGROUND.fill("grey") # These calls here need to be moved since they are interfering with the draw_board
         SCREEN.fill("grey")
         SCREEN.blit(BACKGROUND, (0, 0))
+        font = pg.font.Font(pg.font.get_default_font(), 24)
+        text = font.render(f"Player 1's Attack board", True, "red")
+        text_rect = text.get_rect(center=(450, 700))
+        BACKGROUND.blit(text, text_rect)
+        text = font.render(f"Player 1's Ship board", True, "blue")
+        text_rect = text.get_rect(center=(1200, 700))
+        BACKGROUND.blit(text, text_rect)
+        SCREEN.blit(BACKGROUND, (0,0))  
+        draw_board(player1_board, X_OFFSET+720, MARGIN,1)
         hit = player_turn(player2_board, 1)
+        
         #hit = auto_attack_lvl2(player2_board, 1)
         BACKGROUND.fill("grey") # These calls here need to be moved since they are interfering with the draw_board
         SCREEN.fill("grey")
@@ -731,6 +740,13 @@ def run():
         SCREEN.blit(BACKGROUND, (0, 0))
         #hit = player_turn(player1_board, 2)
         if lvl_of_play == 1:
+            text = font.render(f"Player 2's Attack board", True, "red")
+            text_rect = text.get_rect(center=(450, 700))
+            BACKGROUND.blit(text, text_rect)
+            text = font.render(f"Player 2's Ship board", True, "blue")
+            text_rect = text.get_rect(center=(1200, 700))
+            BACKGROUND.blit(text, text_rect)
+            draw_board(player2_board, X_OFFSET+720, MARGIN,1)
             hit = player_turn(player1_board, 2)
         elif lvl_of_play ==2:
             hit = auto_attack_lvl2(player1_board, 2)
