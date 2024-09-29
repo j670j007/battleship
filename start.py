@@ -20,6 +20,8 @@ MIDDLE = pg.Vector2(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)
 
 SCREEN = pg.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 BACKGROUND = pg.Surface(SCREEN.get_size()).convert()
+FOREGROUND = pg.Surface(SCREEN.get_size()).convert()
+
 CLOCK = pg.time.Clock() # keep to limit framerate
 fps=30
 
@@ -36,8 +38,23 @@ lvl_of_play = None
 game_over = False
 winner = 0
 
+#Loading images
+ship_1 = pg.image.load(r"data/ship_1.png")
+ship_1 = pg.transform.scale(ship_1, (70, 50))
+ship_2 = pg.image.load(r"data/ship_2.png")
+ship_2 = pg.transform.scale(ship_2, (140, 50))
+ship_3 = pg.image.load(r"data/ship_3.png")
+ship_3 = pg.transform.scale(ship_3, (210, 50))
+ship_4 = pg.image.load(r"data/ship_4.png")
+ship_4 = pg.transform.scale(ship_4, (210, 50))
+ship_5 = pg.image.load(r"data/ship_5.png")
+ship_5 = pg.transform.scale(ship_5, (280, 50))
+
+
+
 def draw_board(board, x_offset, y_offset, if_ships_visible):
     # TODO
+    count=0
     my_font = pg.font.Font(pg.font.get_default_font(), 36)
     GRID_SIZE = 10
     CELL_SIZE = 60
@@ -45,15 +62,37 @@ def draw_board(board, x_offset, y_offset, if_ships_visible):
         for x in range(GRID_SIZE):
             rect = pg.Rect(x_offset + x * CELL_SIZE, y_offset + y * CELL_SIZE, CELL_SIZE, CELL_SIZE)
             pg.draw.rect(BACKGROUND, (0, 0, 0), rect, 1)
+            pg.draw.rect(FOREGROUND, (0, 0, 0), rect, 1)
             if (isinstance(board.gameBoard[y][x], Ship) or board.gameBoard[y][x] > 0) and if_ships_visible == 1:
-                pg.draw.circle(BACKGROUND, GREEN, rect.center, CELL_SIZE //4)                
+                pg.draw.circle(FOREGROUND, GREEN, rect.center, CELL_SIZE //4)
+                count+=1
+                if count==1:
+                    FOREGROUND.blit(ship_1, rect.topleft)
+                    break
+                if count==2:
+                    FOREGROUND.blit(ship_2, rect.topleft)
+                    break
+                if count==3:
+                    FOREGROUND.blit(ship_3, rect.topleft)
+                    break
+                if count==4:
+                    FOREGROUND.blit(ship_4, rect.topleft)
+                    break
+                if count==5:
+                    FOREGROUND.blit(ship_5, rect.topleft)
+                    break
+
             if board.gameBoard[y][x] == -1: #-1 on the grid indicates a miss
-                pg.draw.circle(BACKGROUND, (0,0,255), rect.center, CELL_SIZE // 4)
+                pg.draw.circle(FOREGROUND, (0,0,255), rect.center, CELL_SIZE // 4)
             elif board.gameBoard[y][x] == -2: #-2 on the grid indicates a hit
-                pg.draw.circle(BACKGROUND, (255, 0, 0), rect.center, CELL_SIZE // 4)
+                pg.draw.circle(FOREGROUND, (255, 0, 0), rect.center, CELL_SIZE // 4)
             #elif isinstance(board.grid[y][x], Ship) and not hide_ships:
                 #pg.draw.rect(screen, GRAY, rect)
+
+
     SCREEN.blit(BACKGROUND, (0,0))
+    SCREEN.blit(FOREGROUND, (0,0))
+    
 
 
 def start_game():
@@ -207,7 +246,7 @@ def choose_level_of_play():
         
         # flip() the display to put the work we did on screen
         pg.display.flip()
-        #pg.display.update()
+
 
         tick = CLOCK.tick(60) # limits FPS to 60
     
@@ -228,6 +267,7 @@ def player_place_ships(screen, board, clock):
     font = pg.font.Font(None, 36)
 
     for ship in ships:
+        num = 1
         placing = True
         horizontal = True
 
@@ -262,7 +302,9 @@ def player_place_ships(screen, board, clock):
             screen.fill("grey")
             BACKGROUND.fill("grey")
             screen.blit(BACKGROUND, (0, 0))
+            screen.blit(FOREGROUND, (0, 0))
             draw_board(board, X_OFFSET, MARGIN, 1)
+            num+=1
 
             # Draw ship preview
             mouse_x, mouse_y = pg.mouse.get_pos()
@@ -307,7 +349,7 @@ def player_place_ships(screen, board, clock):
                 screen.blit(text, (10, 300))
             
             pg.display.flip()
-            #pg.display.update()
+
 
 def auto_place_ships(screen, board, clock):
     """
@@ -352,36 +394,6 @@ def auto_place_ships(screen, board, clock):
     draw_board(board, X_OFFSET, MARGIN, 0)
 
 
-#def transition_between_turns(pnum):
-    """
-    Display whose turn it is, then wait until the enter
-    button is pushed for confirmation to show that players
-    attack/self board
-    """
-    #hold = True
-    #while hold:
-        #pg.event.set_allowed([pg.QUIT, pg.KEYDOWN]) #added event set to improve performance
-        #for event in pg.event.get():
-            #if event.type == pg.QUIT:
-                #pg.quit()
-                #return False
-            #if event.type == pg.KEYDOWN:
-                #if event.key == pg.K_RETURN:
-                    #return
-
-        #font = pg.font.Font(pg.font.get_default_font(), 48)
-        #SCREEN.fill("grey")
-        #BACKGROUND.fill("grey")
-        #text = font.render(f"Player {pnum}'s Turn Press Enter to continue", True, "white")
-        #text_rect = text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2))
-        #BACKGROUND.blit(text, text_rect)
-        #SCREEN.blit(BACKGROUND, (0,0))
-
-        #events = pg.event.get()
-        #pw.update(events)  # Call once every loop to allow widgets to render and listen
-
-        #pg.display.flip()
-        #pg.display.update()
 
 def updated_transition_between_turns(pnum):
     """
@@ -404,10 +416,15 @@ def updated_transition_between_turns(pnum):
     font = pg.font.Font(pg.font.get_default_font(), 48)
     SCREEN.fill("grey")
     BACKGROUND.fill("grey")
+    
     text = font.render(f"Player {pnum}'s Turn Press Enter to continue", True, "white")
     text_rect = text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2))
+
+    
     BACKGROUND.blit(text, text_rect)
+    FOREGROUND.fill("grey")
     SCREEN.blit(BACKGROUND, (0,0))
+    
 
     #events = pg.event.get()
     #pw.update(events)  # Call once every loop to allow widgets to render and listen
@@ -449,6 +466,7 @@ def player_turn(board, pnum):
                 if 0 <= grid_x < GRID_SIZE and 0 <= grid_y < GRID_SIZE:
                     cell_value = board.gameBoard[grid_y][grid_x]
                     if cell_value == 0:  # Miss
+                        pg.mixer.Sound.play(pg.mixer.Sound("sound/ship_miss.wav"))
                         print(f"Miss at ({grid_x}, {grid_y})")
                         board.gameBoard[grid_y][grid_x] = -1
                         attacking = False  # End turn after miss
@@ -456,11 +474,12 @@ def player_turn(board, pnum):
                         print(f"Hit at ({grid_x}, {grid_y})")
                         board.gameBoard[grid_y][grid_x] = -2
                         hit = True
-                        # Check if the game is over
+                        pg.mixer.Sound.play(pg.mixer.Sound("sound/ship_hit.wav"))
+                        # Check if the game is over                       
                         if check_victory(board):
                             globals().update(game_over=True)
                             globals().update(winner=pnum)
-                            print("Player {pnum} wins!")
+                            print(f"Player {pnum} wins!")
                             return True
                         else:
                             attacking = False  # End turn after a successful hit
@@ -470,6 +489,7 @@ def player_turn(board, pnum):
         draw_board(board, X_OFFSET, MARGIN, 0)
         pg.display.flip()
         #pg.display.update()
+        
         CLOCK.tick(60)
     return hit
 
@@ -490,10 +510,12 @@ def auto_attack_lvl2(board, pnum):
         if 0 <= grid_x < GRID_SIZE and 0 <= grid_y < GRID_SIZE:
             cell_value = board.gameBoard[grid_y][grid_x]
             if cell_value == 0:  # Miss
+                pg.mixer.Sound.play(pg.mixer.Sound("sound/ship_miss.wav"))
                 print(f"Miss at ({grid_x}, {grid_y})")
                 board.gameBoard[grid_y][grid_x] = -1
                 attacking = False  # End turn after miss
             elif isinstance(cell_value, Ship) or cell_value > 0:  # Hit
+                pg.mixer.Sound.play(pg.mixer.Sound("sound/hit_miss.wav"))
                 print(f"Hit at ({grid_x}, {grid_y})")
                 board.gameBoard[grid_y][grid_x] = -2
                 hit = True
@@ -501,7 +523,7 @@ def auto_attack_lvl2(board, pnum):
                 if check_victory(board):
                     globals().update(game_over=True)
                     globals().update(winner=pnum)
-                    print("Player {pnum} wins!")
+                    print(f"Player {pnum} wins!")
                     return True
                 else:
                     attacking = False  # End turn after a successful hit
@@ -540,10 +562,12 @@ def auto_attack_lvl3(board, pnum):
                         needs_break = True
                         cell_value = board.gameBoard[new_y][new_x]
                         if cell_value == 0:
+                            pg.mixer.Sound.play(pg.mixer.Sound("sound/ship_miss.wav"))
                             print("miss")
                             board.gameBoard[new_y][new_x] = -1
                             attacking = False
                         elif cell_value == 1:
+                            pg.mixer.Sound.play(pg.mixer.Sound("sound/hit_miss.wav"))
                             print("hit")
                             board.gameBoard[new_y][new_x] = -2
                             hit = True
@@ -593,6 +617,7 @@ def auto_attack_lvl4(board, pnum):
                 cell_value = board.gameBoard[y][x]
                 if cell_value == 1:  # There is a ship placed at this location
                     board.gameBoard[y][x] = -2
+                    pg.mixer.Sound.play(pg.mixer.Sound("sound/hit_miss.wav"))
                     print(f"Hit at ({x}, {y})")
                     #attacking = False  # End turn after miss
                     hit = True
@@ -609,7 +634,7 @@ def auto_attack_lvl4(board, pnum):
     if check_victory(board):
         globals().update(game_over=True)
         globals().update(winner=pnum)
-        print("Player {pnum} wins!")
+        print(f"Player {pnum} wins!")
         return True
     #else:
         #attacking = False  # End turn after a successful hit
@@ -662,23 +687,30 @@ def display_attack_result(attacking_player, hit):
     SCREEN.blit(text, text_rect)
     pg.display.flip()
     #pg.display.update()
-    time.sleep(1.5)  # Display the result for 1.5 seconds
+    time.sleep(3)  # Display the result for 1.5 seconds
 
 def run():
     # pygame setup
     pg.init()
+
+    # Title Music
+    pg.mixer.music.load("sound/title_music.mp3")
+    pg.mixer.music.play(-1) # Music Plays indefintely
+
     # set screen size
     pg.display.set_caption("Battleship")
 
     SCREEN.fill("grey")
     BACKGROUND.fill("grey")
+    FOREGROUND.fill("grey")
     SCREEN.blit(BACKGROUND, (0,0))
+    SCREEN.blit(FOREGROUND, (0,0))
     pg.display.update()
 
     running = True # track if loop should keep running
 
     player1_board = Board() # Initializes both players boards
-    player2_board = Board()
+    player2_board = Board() 
 
     if not start_game():
         return -1
@@ -698,35 +730,34 @@ def run():
     else:
         player_place_ships(SCREEN, player2_board, CLOCK)
 
+    # Stops title music and start gameplay music
+    pg.mixer.music.stop()
+    pg.mixer.music.load("sound/gameplay_music.mp3")
+    pg.mixer.music.play(-1) # Music Plays indefintely
+
     global game_over
     while not game_over:
-        BACKGROUND.fill("grey") # These calls here need to be moved since they are interfering with the draw_board
-        SCREEN.fill("grey")
-        SCREEN.blit(BACKGROUND, (0, 0))
         updated_transition_between_turns(1)
-        BACKGROUND.fill("grey") # These calls here need to be moved since they are interfering with the draw_board
-        SCREEN.fill("grey")
-        SCREEN.blit(BACKGROUND, (0, 0))
         font = pg.font.Font(pg.font.get_default_font(), 24)
         text = font.render(f"Player 1's Attack board", True, "red")
         text_rect = text.get_rect(center=(450, 700))
-        BACKGROUND.blit(text, text_rect)
+        FOREGROUND.blit(text, text_rect)
         text = font.render(f"Player 1's Ship board", True, "blue")
         text_rect = text.get_rect(center=(1200, 700))
-        BACKGROUND.blit(text, text_rect)
-        SCREEN.blit(BACKGROUND, (0,0))  
+        FOREGROUND.blit(text, text_rect)
+        SCREEN.blit(BACKGROUND, (0,0))
+        SCREEN.blit(FOREGROUND, (0, 0))
+         
         draw_board(player1_board, X_OFFSET+720, MARGIN,1)
+        
         hit = player_turn(player2_board, 1)
         
         #hit = auto_attack_lvl2(player2_board, 1)
         BACKGROUND.fill("grey") # These calls here need to be moved since they are interfering with the draw_board
         SCREEN.fill("grey")
         SCREEN.blit(BACKGROUND, (0, 0))
-        display_attack_result(1, hit)
 
-        if DEBUG:
-            print(player1_board.gameBoard)
-            print(player2_board.gameBoard)
+        display_attack_result(1, hit)
 
         if game_over:
             break
@@ -742,10 +773,10 @@ def run():
         if lvl_of_play == 1:
             text = font.render(f"Player 2's Attack board", True, "red")
             text_rect = text.get_rect(center=(450, 700))
-            BACKGROUND.blit(text, text_rect)
+            FOREGROUND.blit(text, text_rect)
             text = font.render(f"Player 2's Ship board", True, "blue")
             text_rect = text.get_rect(center=(1200, 700))
-            BACKGROUND.blit(text, text_rect)
+            FOREGROUND.blit(text, text_rect)
             draw_board(player2_board, X_OFFSET+720, MARGIN,1)
             hit = player_turn(player1_board, 2)
         elif lvl_of_play ==2:
@@ -760,9 +791,6 @@ def run():
         SCREEN.blit(BACKGROUND, (0, 0))
         display_attack_result(2, hit)
 
-        if DEBUG:
-            print(player1_board.gameBoard)
-            print(player2_board.gameBoard)
 
         if game_over:
             break
@@ -773,12 +801,15 @@ def run():
     SCREEN.blit(BACKGROUND, (0, 0))
     # display winner
     font = pg.font.Font(None, 60)
+    
     text = font.render(f"Game Over! Winner: Player {winner}", True, BLUE)
     text_rect = text.get_rect(center=(MIDDLE.x, MIDDLE.y))
     SCREEN.blit(text, text_rect)
     pg.display.flip()
-    #pg.display.update()
-    time.sleep(1.5)  # Display the result for 1.5 seconds
+    pg.display.update()
+    pg.mixer.music.fadeout(5000)
+    pg.mixer.Sound.play(pg.mixer.Sound("sound/victory.mp3")) # Victory Sound
+    time.sleep(5)  # Display the result for 5 seconds
 
     pg.quit()
     return 0 # returned in good state
