@@ -366,11 +366,11 @@ def auto_place_ships(screen, board, clock):
         horizontal = True
 
         invalid_placement = None
-        while placing:
+        while placing:   
                 
-            grid_x = random.randint(0, 9)
+            grid_x = random.randint(0, 9)  #selects locations on grid at random
             grid_y = random.randint(0, 9)
-            orientation = random.choice([1, 2])
+            orientation = random.choice([1, 2])     #vertical or horizontal 
 
             if orientation == 1:
                horizontal = horizontal
@@ -381,8 +381,8 @@ def auto_place_ships(screen, board, clock):
                 #print(f"({x}, {y})")
                 print(f"({grid_x}, {grid_y})")
                     
-            if board.place_ship(ship, grid_x, grid_y, horizontal):
-                    placing = False
+            if board.place_ship(ship, grid_x, grid_y, horizontal):          #successful placement 
+                    placing = False     #ends loop
                     invalid_placement = None
             else:
                     invalid_placement = True
@@ -401,6 +401,7 @@ def updated_transition_between_turns(pnum):
     button is pushed for confirmation to show that players
     attack/self board
     updated routine to improve performance
+    this takes out the event listener that was slowing performance
     """
     #hold = True
     #while hold:
@@ -417,7 +418,7 @@ def updated_transition_between_turns(pnum):
     SCREEN.fill("grey")
     BACKGROUND.fill("grey")
     
-    text = font.render(f"Player {pnum}'s Turn Press Enter to continue", True, "white")
+    text = font.render(f"Player {pnum}'s Turn", True, "white")
     text_rect = text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2))
 
     
@@ -504,18 +505,18 @@ def auto_attack_lvl2(board, pnum):
     hit = False
     while attacking:
 
-        grid_x = random.randint(0, 9)
+        grid_x = random.randint(0, 9)  #attacks at random 
         grid_y = random.randint(0, 9)
 
-        if 0 <= grid_x < GRID_SIZE and 0 <= grid_y < GRID_SIZE:
-            cell_value = board.gameBoard[grid_y][grid_x]
+        if 0 <= grid_x < GRID_SIZE and 0 <= grid_y < GRID_SIZE:  #this logic is the same as player turn. Takes out part of routine that looks for input from user
+            cell_value = board.gameBoard[grid_y][grid_x]            
             if cell_value == 0:  # Miss
                 pg.mixer.Sound.play(pg.mixer.Sound("sound/ship_miss.wav"))
                 print(f"Miss at ({grid_x}, {grid_y})")
                 board.gameBoard[grid_y][grid_x] = -1
                 attacking = False  # End turn after miss
             elif isinstance(cell_value, Ship) or cell_value > 0:  # Hit
-                pg.mixer.Sound.play(pg.mixer.Sound("sound/hit_miss.wav"))
+                pg.mixer.Sound.play(pg.mixer.Sound("sound/ship_hit.wav"))
                 print(f"Hit at ({grid_x}, {grid_y})")
                 board.gameBoard[grid_y][grid_x] = -2
                 hit = True
@@ -546,8 +547,8 @@ def auto_attack_lvl3(board, pnum):
     '''
     attacking = True
     hit = False
-    needs_break = False
-    found = False
+    needs_break = False  #because this relies on a nested loop to search the board for a previous hit, we need to break out of the loop on a successful attack
+    found = False #found an attackable cell 
     new_x = -1
     new_y = -1
     while attacking:
@@ -555,19 +556,19 @@ def auto_attack_lvl3(board, pnum):
         for y in range (0, 10):
             for x in range (0, 10):
                 cell_value = board.gameBoard[y][x]
-                if cell_value == -2:  # There is a ship placed at this location
-                    new_x, new_y, found = return_adj(board, x, y)
+                if cell_value == -2:  # There is a hit at this location 
+                    new_x, new_y, found = return_adj(board, x, y)  #helper function looking for adjacent cells 
                     if found:
                         print("attack adjacent cell success", new_x, new_y)
                         needs_break = True
                         cell_value = board.gameBoard[new_y][new_x]
-                        if cell_value == 0:
+                        if cell_value == 0:  #no ship here 
                             pg.mixer.Sound.play(pg.mixer.Sound("sound/ship_miss.wav"))
                             print("miss")
                             board.gameBoard[new_y][new_x] = -1
                             attacking = False
-                        elif cell_value == 1:
-                            pg.mixer.Sound.play(pg.mixer.Sound("sound/hit_miss.wav"))
+                        elif cell_value == 1:  #there is a ship 
+                            pg.mixer.Sound.play(pg.mixer.Sound("sound/ship_hit.wav"))
                             print("hit")
                             board.gameBoard[new_y][new_x] = -2
                             hit = True
@@ -585,7 +586,7 @@ def auto_attack_lvl3(board, pnum):
                     break
             if needs_break:
                 break
-        if not found: 
+        if not found: #no previous hits, or all adjacent squares ineligible for an attack. Attack at random
             hit = auto_attack_lvl2(board, pnum)  
             attacking = False  
             
@@ -612,14 +613,13 @@ def auto_attack_lvl4(board, pnum):
     needs_break = False
     while attacking:
 
-        for y in range (0, 10):
+        for y in range (0, 10):  #scrolls through the board, looks for ships. Always hits until victory condition 
             for x in range (0, 10):
                 cell_value = board.gameBoard[y][x]
                 if cell_value == 1:  # There is a ship placed at this location
                     board.gameBoard[y][x] = -2
-                    pg.mixer.Sound.play(pg.mixer.Sound("sound/hit_miss.wav"))
+                    pg.mixer.Sound.play(pg.mixer.Sound("sound/ship_hit.wav"))
                     print(f"Hit at ({x}, {y})")
-                    #attacking = False  # End turn after miss
                     hit = True
                     attacking = False
                     needs_break = True
@@ -651,13 +651,14 @@ def auto_attack_lvl4(board, pnum):
 def return_adj(board, x, y):
     #looks for adjacent cells, locations that haven't been attacked
     #if a cell contains 0 or 1, can be attacked. Returns coordinates of the cell 
+    #starts with cell above x, y 
     can_attack = None
     new_x = x
     new_y = y
 
 
     if y < 9 and board.gameBoard[y+1][x] > -1:      #bounds checking 
-        new_y = y+1
+        new_y = y+1  #sets y value to new
         can_attack = True
         return new_x, new_y, can_attack
     elif x < 9 and board.gameBoard[y][x+1] > -1:
@@ -779,7 +780,7 @@ def run():
             FOREGROUND.blit(text, text_rect)
             draw_board(player2_board, X_OFFSET+720, MARGIN,1)
             hit = player_turn(player1_board, 2)
-        elif lvl_of_play ==2:
+        elif lvl_of_play ==2:  #added in options for AI module
             hit = auto_attack_lvl2(player1_board, 2)
         elif lvl_of_play == 3:
             hit = auto_attack_lvl3(player1_board, 2)
