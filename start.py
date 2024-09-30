@@ -1,3 +1,10 @@
+'''
+Project 2 - AI Capabilities and Added Features - start.py
+Authors: Abraham Lopez, Jennifer Aber, Muskan Sharma, Andy Trinh
+start.py sets up and allows user to play with opposing plaer locally or with an Ai of three difficulty settings, added features include 
+animation to display hits and misses and music and sound effects.
+'''
+
 # import platform
 import time
 import random
@@ -50,8 +57,31 @@ ship_4 = pg.transform.scale(ship_4, (210, 50))
 ship_5 = pg.image.load(r"data/ship_5.png")
 ship_5 = pg.transform.scale(ship_5, (280, 50))
 
+explosion = pg.image.load(r"data/hitEx/HFrame1.PNG")
+explosion = pg.transform.scale(explosion, (700, 700))
 
+waterex = pg.image.load(r"data/waterEx/WFrame7.PNG")
+waterex = pg.transform.scale(waterex, (500, 500))
 
+hitExplode = [] # list for successful attack
+for i in range(1,11):
+    frame = pg.image.load(f"data/hitEx/HFrame{i}.PNG")
+    frame = pg.transform.scale(frame, (700, 700))
+    hitExplode.append(frame)
+
+missExplode = []#list for missed attack
+for j in range(1, 13):
+    frame = pg.image.load(f"data/waterEx/WFrame{j}.PNG")
+    frame = pg.transform.scale(frame, (500, 500))
+    missExplode.append(frame)
+
+'''
+Draws grid board and places ships
+@param board
+@param x_offset
+@param y_offset
+@param if_ships_visible
+'''
 def draw_board(board, x_offset, y_offset, if_ships_visible):
     # TODO
     count=0
@@ -94,7 +124,9 @@ def draw_board(board, x_offset, y_offset, if_ships_visible):
     SCREEN.blit(FOREGROUND, (0,0))
     
 
-
+'''
+Implements game start screen
+'''
 def start_game():
     globals().update(game_over=False)
 
@@ -140,7 +172,10 @@ def start_game():
         tick = CLOCK.tick(30) # limits FPS to 60
 
     return True
-
+'''
+Sets up screen and allows player to choose the number of ships to be used in
+battleship game
+'''
 def choose_gamemode():
     running = True
     def txtCb(txt):
@@ -199,6 +234,9 @@ X_OFFSET = 180
 CELL_SIZE = 60
 GRID_SIZE = 10
 
+'''
+Allows players to choose between 2 player mode, vs playing with an 'AI' with varying difficulty
+'''
 def choose_level_of_play():
     running = True
     def txtCb_2(txt):
@@ -680,11 +718,29 @@ def return_adj(board, x, y):
 
 def display_attack_result(attacking_player, hit):
     font = pg.font.Font(None, 60)
-    if hit:
-        text = font.render("Hit!", True, RED)
+
+    hit_rect = explosion.get_rect(center=(MIDDLE.x, MIDDLE.y))
+    miss_rect = waterex.get_rect(center=(MIDDLE.x, MIDDLE.y))
+    frame = 0
+    clock = pg.time.Clock()
+    if hit: #Displays explosion 
+         while frame < len(hitExplode): #While animation isi still occuring
+                clock.tick(12) 
+                SCREEN.blit(hitExplode[frame], hit_rect) #Loads in Animation
+                pg.display.update()#Update Display
+                frame +=1
+                SCREEN.fill("grey") #Fill in between Frames
+         text = font.render("Hit!", True, WHITE)
     else:
-        text = font.render("Miss!", True, BLUE)
+        while frame < len(missExplode):
+                clock.tick(14)
+                SCREEN.blit(missExplode[frame], miss_rect)
+                pg.display.update()
+                frame += 1
+                SCREEN.fill("grey")
+        text = font.render("Miss!", True, WHITE)
     text_rect = text.get_rect(center=(MIDDLE.x, MIDDLE.y))
+
     SCREEN.blit(text, text_rect)
     pg.display.flip()
     #pg.display.update()
